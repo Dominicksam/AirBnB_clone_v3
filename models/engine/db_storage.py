@@ -5,7 +5,7 @@ Contains the class DBStorage
 
 import models
 from models.amenity import Amenity
-from models.base_model import BaseModel, Base
+from models.base_model import BaseModel
 from models.city import City
 from models.place import Place
 from models.review import Review
@@ -15,9 +15,12 @@ from os import getenv
 import sqlalchemy
 from sqlalchemy import create_engine
 from sqlalchemy.orm import scoped_session, sessionmaker
+from sqlalchemy.ext.declarative import declarative_base
+
 
 classes = {"Amenity": Amenity, "City": City,
            "Place": Place, "Review": Review, "State": State, "User": User}
+
 
 
 class DBStorage:
@@ -54,6 +57,30 @@ class DBStorage:
     def new(self, obj):
         """add the object to the current database session"""
         self.__session.add(obj)
+    
+    def get(self, cls, id):
+        """
+        fetches specific object
+        :param cls: class of object as string
+        :param id: id of object as string
+        :return: found object or None
+        """
+        all_class = self.all(cls)
+
+        for obj in all_class.values():
+            if id == str(obj.id):
+                return obj
+
+        return None
+    
+    def count(self, cls=None):
+        """
+        count of how many instances of a class
+        :param cls: class name
+        :return: count of instances of a class
+        """
+        return len(self.all(cls))
+
 
     def save(self):
         """commit all changes of the current database session"""
@@ -67,7 +94,8 @@ class DBStorage:
     def reload(self):
         """reloads data from the database"""
         Base.metadata.create_all(self.__engine)
-        sess_factory = sessionmaker(bind=self.__engine, expire_on_commit=False)
+        sess_factory = sessionmaker(bind=self.__engine,
+                expire_on_commit=False)
         Session = scoped_session(sess_factory)
         self.__session = Session
 
